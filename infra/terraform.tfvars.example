@@ -1,0 +1,19 @@
+# Copy this file to terraform.tfvars and fill in YOUR values.
+# terraform.tfvars is gitignored - never commit it, since it can contain
+# IPs/identifying info you may not want public.
+
+aws_region    = "us-east-1"
+instance_type = "t3.micro"
+
+# Create this in AWS Console > EC2 > Key Pairs > Create key pair (RSA, .pem)
+# Download the .pem file and chmod 400 it. Put the NAME only here (no .pem).
+key_pair_name = "your-key-pair-name"
+
+# Get your current IP from https://checkip.amazonaws.com then append /32
+# Example: "203.0.113.42/32"
+ssh_allowed_cidr = "YOUR_IP_HERE/32"
+
+github_repo_url = "https://github.com/anil-67140/ml-final-project-comparison-dashboard.git"
+
+# "flask", "streamlit", or "both"
+app_choice = "both"
