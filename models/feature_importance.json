@@ -1,0 +1,44 @@
+{
+  "Random Forest": {
+    "Age": 0.064,
+    "Gender": 0.0335,
+    "Ethnicity": 0.0607,
+    "ParentalEducation": 0.0792,
+    "StudyTimeWeekly": 0.3185,
+    "Absences": 0.2169,
+    "Tutoring": 0.0342,
+    "ParentalSupport": 0.0785,
+    "Extracurricular": 0.0327,
+    "Sports": 0.0294,
+    "Music": 0.0274,
+    "Volunteering": 0.025
+  },
+  "Logistic Regression": {
+    "Age": 0.0326,
+    "Gender": 0.0261,
+    "Ethnicity": 0.0703,
+    "ParentalEducation": 0.0199,
+    "StudyTimeWeekly": 0.4357,
+    "Absences": 0.1896,
+    "Tutoring": 0.0523,
+    "ParentalSupport": 0.1131,
+    "Extracurricular": 0.0525,
+    "Sports": 0.0339,
+    "Music": 0.0584,
+    "Volunteering": 0.0429
+  },
+  "labels": {
+    "Age": "Age (years)",
+    "Gender": "Gender",
+    "Ethnicity": "Ethnicity",
+    "ParentalEducation": "Parental Education",
+    "StudyTimeWeekly": "Weekly Study Time (hrs)",
+    "Absences": "Absences (days/year)",
+    "Tutoring": "Tutoring",
+    "ParentalSupport": "Parental Support",
+    "Extracurricular": "Extracurricular",
+    "Sports": "Sports",
+    "Music": "Music",
+    "Volunteering": "Volunteering"
+  }
+}

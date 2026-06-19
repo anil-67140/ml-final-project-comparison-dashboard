@@ -1,0 +1,41 @@
+{
+  "n_rows": 2392,
+  "n_features": 12,
+  "class_counts": {
+    "A": 115,
+    "B": 224,
+    "C": 384,
+    "D": 532,
+    "F": 1137
+  },
+  "feature_columns": [
+    "Age",
+    "Gender",
+    "Ethnicity",
+    "ParentalEducation",
+    "StudyTimeWeekly",
+    "Absences",
+    "Tutoring",
+    "ParentalSupport",
+    "Extracurricular",
+    "Sports",
+    "Music",
+    "Volunteering"
+  ],
+  "feature_labels": {
+    "Age": "Age (years)",
+    "Gender": "Gender",
+    "Ethnicity": "Ethnicity",
+    "ParentalEducation": "Parental Education",
+    "StudyTimeWeekly": "Weekly Study Time (hrs)",
+    "Absences": "Absences (days/year)",
+    "Tutoring": "Tutoring",
+    "ParentalSupport": "Parental Support",
+    "Extracurricular": "Extracurricular",
+    "Sports": "Sports",
+    "Music": "Music",
+    "Volunteering": "Volunteering"
+  },
+  "train_size": 1913,
+  "test_size": 479
+}
