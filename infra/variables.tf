@@ -13,7 +13,7 @@ variable "instance_type" {
 variable "root_volume_gb" {
   description = "Root EBS volume size in GB. Free tier includes 30GB of gp2/gp3 EBS storage per month. Kept small here since the repo + venv + models are lightweight."
   type        = number
-  default     = 8
+  default     = 30
 }
 
 variable "key_pair_name" {

@@ -8,7 +8,9 @@ Run this FIRST before launching Flask or Streamlit.
 What it does:
   1. Loads Students_Performance_Dataset.csv
   2. Cleans and preprocesses the data
-  3. Trains Logistic Regression + Random Forest
+  3. Trains Logistic Regression + Random Forest (with class_weight='balanced'
+     so that minority grade classes, e.g. A and B, are not drowned out by
+     the majority class F)
   4. Evaluates both models and saves all metrics
   5. Saves models + artefacts into ./models/ folder
 
@@ -44,9 +46,10 @@ from sklearn.metrics import (
     roc_auc_score, roc_curve
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # CONFIG
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 CSV_PATH      = "Students_Performance_Dataset.csv"
 MODELS_DIR    = "models"
 RANDOM_STATE  = 42
@@ -77,21 +80,26 @@ FEATURE_LABELS = {
     "Volunteering":      "Volunteering",
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # STEP 1 — Load dataset
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 print("=" * 60)
 print("  Student Performance ML — Training Script")
 print("=" * 60)
 
 print(f"\n[1] Loading dataset from '{CSV_PATH}' ...")
 df = pd.read_csv(CSV_PATH)
+print("=" * 60)
 print(f"    Raw shape: {df.shape[0]} rows × {df.shape[1]} columns")
+print("=" * 60)
 print(f"    Columns  : {list(df.columns)}")
+print(f"    Columns  : {len(list(df.columns))}")
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # STEP 2 — Preprocessing
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 print("\n[2] Preprocessing ...")
 
 # 2a. Missing values — only in StudyTimeWeekly and Absences
@@ -121,9 +129,10 @@ for i, name in enumerate(CLASS_NAMES):
     pct = cnt / len(y) * 100
     print(f"      Grade {name}: {cnt} students ({pct:.1f}%)")
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # STEP 3 — Train / Test Split
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 print(f"\n[3] Train/test split (80/20, stratified) ...")
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
@@ -131,23 +140,33 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"    Training samples: {len(X_train)}")
 print(f"    Test samples    : {len(X_test)}")
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # STEP 4 — Feature Scaling (for Logistic Regression only)
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 print("\n[4] Scaling features (StandardScaler for LR) ...")
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled  = scaler.transform(X_test)
 print("    Done.")
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 5 — Train Models
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+# STEP 5 — Train Models (with class_weight='balanced')
+# -------------------------------------------------------
+# UPDATED: class_weight='balanced' added to both models. Without it, both
+# models over-predict the majority class (Grade F, ~47.5% of the dataset)
+# and recall for minority classes (A, B) collapses toward 0%. Balanced
+# class weights tell each model to weight minority-class errors more
+# heavily during training, trading a small amount of raw accuracy for a
+# large improvement in minority-class recall and macro F1-score.
+
 print("\n[5] Training models ...")
 
 # --- Logistic Regression ---
 print("    Training Logistic Regression ...")
-lr_model = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)
+lr_model = LogisticRegression(
+    max_iter=1000, random_state=RANDOM_STATE, class_weight="balanced"
+)
 t0 = time.time()
 lr_model.fit(X_train_scaled, y_train)
 lr_time = round(time.time() - t0, 4)
@@ -156,16 +175,18 @@ print(f"    Done in {lr_time}s")
 # --- Random Forest ---
 print("    Training Random Forest ...")
 rf_model = RandomForestClassifier(
-    n_estimators=200, max_depth=8, random_state=RANDOM_STATE, n_jobs=-1
+    n_estimators=200, max_depth=8, random_state=RANDOM_STATE,
+    n_jobs=-1, class_weight="balanced"
 )
 t0 = time.time()
 rf_model.fit(X_train.values, y_train)
 rf_time = round(time.time() - t0, 4)
 print(f"    Done in {rf_time}s")
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # STEP 6 — Evaluate Both Models
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 print("\n[6] Evaluating models ...")
 
 y_test_bin = label_binarize(y_test, classes=list(range(len(CLASS_NAMES))))
@@ -222,15 +243,14 @@ def evaluate(name, model, X_te, train_time):
 lr_metrics, lr_roc = evaluate("Logistic Regression", lr_model, X_test_scaled,  lr_time)
 rf_metrics, rf_roc = evaluate("Random Forest",       rf_model, X_test.values,  rf_time)
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # STEP 7 — Feature Importance
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 print("[7] Computing feature importance ...")
 
-# Random Forest: native Gini importance
 rf_imp = dict(zip(FEATURE_COLS, rf_model.feature_importances_.tolist()))
 
-# Logistic Regression: mean |coefficient| across all classes
 lr_coef_abs = np.mean(np.abs(lr_model.coef_), axis=0)
 lr_imp = dict(zip(FEATURE_COLS, lr_coef_abs.tolist()))
 
@@ -240,9 +260,22 @@ feature_importance = {
     "labels": FEATURE_LABELS,
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+print("\n--- RANDOM FOREST FEATURE IMPORTANCES ---")
+sorted_rf = sorted(feature_importance["Random Forest"].items(), key=lambda x: x[1], reverse=True)
+for feature, importance in sorted_rf:
+    label = feature_importance["labels"].get(feature, feature)
+    print(f"    {label:<20}: {importance:.4f}")
+
+print("\n--- LOGISTIC REGRESSION IMPORTANCES (Mean |Coef|) ---")
+sorted_lr = sorted(feature_importance["Logistic Regression"].items(), key=lambda x: x[1], reverse=True)
+for feature, importance in sorted_lr:
+    label = feature_importance["labels"].get(feature, feature)
+    print(f"    {label:<20}: {importance:.4f}")
+
+# -------------------------------------------------------
 # STEP 8 — Dataset Summary
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 class_counts = pd.Series(y).value_counts().sort_index()
 dataset_summary = {
     "n_rows":          int(len(df)),
@@ -254,9 +287,20 @@ dataset_summary = {
     "test_size":       int(len(X_test)),
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+print("\n=== DATASET SUMMARY ===")
+print(f"Total Rows        : {dataset_summary['n_rows']}")
+print(f"Total Features    : {dataset_summary['n_features']}")
+print(f"Training Set Size : {dataset_summary['train_size']}")
+print(f"Testing Set Size  : {dataset_summary['test_size']}")
+
+print("\n--- Target Class Distribution ---")
+for class_name, count in dataset_summary["class_counts"].items():
+    print(f"    Class {class_name:<3}: {count} students")
+
+# -------------------------------------------------------
 # STEP 9 — Save Everything
-# ─────────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------
+
 print(f"\n[8] Saving artefacts to ./{MODELS_DIR}/ ...")
 os.makedirs(MODELS_DIR, exist_ok=True)
 
